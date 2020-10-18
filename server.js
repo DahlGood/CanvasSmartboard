@@ -11,5 +11,9 @@ app.get('/', (req,res) => {
     res.send('Welcome to our Smartboard.');
 });
 
+app.get('/randomroute', (req,res) => {
+    res.send('Welcome to our Smartboard.');
+});
+
 
 exports.server = server;

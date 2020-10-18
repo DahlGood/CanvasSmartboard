@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/DahlGood/CanvasSmartboard#readme",
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "paper": "^0.12.11"
   }
 }
