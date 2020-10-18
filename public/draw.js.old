@@ -1,4 +1,5 @@
 var selectedColor = "black";
+var toolie = ""
 
 window.addEventListener('load', () => {
     var socket = io();
@@ -20,7 +21,19 @@ window.addEventListener('load', () => {
     // window.addEventListener('resize', resizeCanvas);
 
     //add event listener to call toolSelections when a new button is selected.
-    toolSelection("pencil"); 
+    //toolSelection("pencil");
+    
+    document.getElementById("pSelect").addEventListener("click", () => {
+        canvas.addEventListener("mousemove", pencil);
+        socket.on('mousePos', remotePencil); 
+    });
+    document.getElementById("eSelect").addEventListener("click", () => {
+        canvas.addEventListener("mousemove", eraser);
+        socket.on('mousePos', remoteEraser); 
+    });
+    // document.getElementById("dSelect").addEventListener("click", () => {
+    //     //Download
+    // });
 
     // socket listeners   
     socket.on('startPos', remoteStartPosition);
@@ -77,6 +90,19 @@ window.addEventListener('load', () => {
     // called when mouse button is pressed down, allows draw() to start
     // emitting drawing coordinate data to server
     function startPosition(e) {
+        switch(toolie) {
+            case "pencil":
+                canvas.addEventListener("mousemove", pencil);
+                socket.on('mousePos', remotePencil); 
+                break;
+            case "line":
+                canvas.addEventListener("mouseup", line);
+                socket.on('mousePos', remoteLine); 
+                break;
+            default:
+
+                break;
+        }
         if(LOCKED) {
             console.log('cant draw, lock is locked');
             return;
@@ -128,87 +154,6 @@ window.addEventListener('load', () => {
           canvas.height = y;
         }
     }
-
-    /*
-    ====================================================================================
-                                            LINE TOOL
-    ====================================================================================
-    */
-
-    function line(e) {
-        console.log("HERE!");
-        let pos = getMouseCoordsOnCanvas(canvas, e);
-        let attr = getLineAttributes();
-        console.log("Start: " + c.startPos.x + ", " + c.startPos.y);
-        console.log("Ends: " + c.currentPos.x + ", " + c.currentPos.y);
-        let data = {
-            sPos: {x: c.startPos.x, y: c.startPos.y},
-            ePos: pos,
-            attr: attr
-        }
-        c.beginPath(); 
-        socket.emit('mousePos', data);
-        
-    }
-    
-    function remoteLine(data) {
-        console.log("REMOTE LINE");
-        c.beginPath();  
-        c.moveTo(data.sPos.x, data.sPos.y);
-        c.lineWidth = data.attr.lineWidth;
-        c.lineCap = data.attr.lineCap;
-        c.strokeStyle = data.attr.strokeStyle;
-     
-        c.lineTo(data.ePos.x, data.ePos.y);
-        c.stroke();
-                    // makes each dot a unique color, instead of each line
-    
-    }
-    
-    /*
-    ====================================================================================
-                                        RECTANGLE TOOL
-    ====================================================================================
-    */
-    function rectangle(e) {
-    
-    
-    }
-    
-    function remoteRectangle(data) {
-    
-    
-    }
-    
-    /*
-    ====================================================================================
-                                        CIRCLE TOOL
-    ====================================================================================
-    */
-    function circle(e) {
-    
-    
-    }
-    
-    function remoteCircle(data) {
-    
-    
-    }
-    
-    /*
-    ====================================================================================
-                                        TRIANGLE TOOL
-    ====================================================================================
-    */
-    function triangle(e) {
-    
-    
-    }
-    
-    function remoteTriangle(data) {
-    
-    
-    }
     
     /*
     ====================================================================================
@@ -247,46 +192,31 @@ window.addEventListener('load', () => {
     ====================================================================================
     */
     function eraser(e) {
-    
-    
+        // if mouse isnt clicked down or someone else is drawing, return
+        if(!painting || LOCKED) return;
+        
+        let pos = getMouseCoordsOnCanvas(canvas, e);
+        let attr = getLineAttributes();
+        let data = {
+            pos: pos,
+            attr: attr
+        }
+        socket.emit('mousePos', data);
     }
     
     function remoteEraser(data) {
+        c.beginPath();
+        // set line attributes according to data received from server
+        //c.moveTo(c.startPos.x, c.startPos.y);
+        c.lineWidth = data.attr.lineWidth;
+        c.lineCap = data.attr.lineCap;
+        c.strokeStyle = "#ffffff";
+        c.lineWidth = 20;
     
-    
-    }
-
-    // function  getMousePos(canvas, e) {
-    //     // getBoundingClientRect returns dimensions of an HTML obj (like a div, or canvas)
-    //     // relative to the viewport
-    //     var rect = canvas.getBoundingClientRect(), // abs. size of element (usually viewport)
-    //         scaleX = canvas.width / rect.width,    // relationship bitmap vs. element for X
-    //         scaleY = canvas.height / rect.height;  // relationship bitmap vs. element for Y
-
-    //     // e.clientX & e.clientY are coordinates of e (canvas) relative to viewport
-    //     // rect.left & rect.top are the distances of the canvas left & top borders to the viewport
-    //     return {
-    //         x: (e.clientX - rect.left) * scaleX - mouseBuff,   // scale mouse coordinates after they have
-    //         y: (e.clientY - rect.top) * scaleY - mouseBuff     // been adjusted to be relative to element
-    //   }
-    // }
-
-
-    function toolSelection(toolUsed) {
-        switch(toolUsed) {
-            case "pencil":
-                canvas.addEventListener("mousemove", pencil);
-                socket.on('mousePos', remotePencil); 
-                break;
-            case "line":
-                canvas.addEventListener("mouseup", line);
-                socket.on('mousePos', remoteLine); 
-                break;
-            default:
-
-                break;
-        }
-
+        c.lineTo(data.pos.x, data.pos.y);
+        c.stroke();
+        //c.beginPath();              // makes each dot a unique color, instead of each line
+        c.moveTo(data.pos.x, data.pos.y);
     }
 
 });
@@ -317,20 +247,4 @@ colorBtns.forEach((btn) => {
         console.log(selectedColor);
     };
 });
-var toolBtns = document.querySelectorAll(".tool-box");
-console.log(toolBtns);
-toolBtns.forEach((btn) => {
-    btn.onclick = function () {
-        //make all buttons inactive
-        toolBtns.forEach((btn) =>{
-            removeClass(btn, "active");
-        });
 
-        //make selected button active
-        btn.className += " active";  
-
-        //set color to button color
-        selectedTool = btn.attributes["data-color"].value;
-        console.log(selectedTool);
-    };
-});

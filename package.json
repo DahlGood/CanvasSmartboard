@@ -18,6 +18,7 @@
   "homepage": "https://github.com/DahlGood/CanvasSmartboard#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "paper": "^0.12.11"
+    "paper": "^0.12.11",
+    "socketio": "^1.0.0"
   }
 }
